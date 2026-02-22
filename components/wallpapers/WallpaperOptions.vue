@@ -58,9 +58,6 @@ const colAsr = ref(true);
 const colMaghrib = ref(true);
 const colIsha = ref(true);
 
-// Time format
-const use24Hour = ref(false);
-
 // Day range
 const dayRange = ref('full');
 const dayRangeStart = ref(1);
@@ -111,7 +108,6 @@ function buildOptions() {
         highlightWhiteDays: highlightWhiteDays.value,
         whiteDaysColor: whiteDaysColor.value,
         todayColor: todayColor.value,
-        use24Hour: use24Hour.value,
         columns: {
             date: colDate.value,
             hijri: colHijri.value,
@@ -134,7 +130,7 @@ watch(
      useAlternatingColors, evenRowColor, oddRowColor,
      tableBlur, tableBlurOpacity,
      headerFont, titleFont, timingsFont, titleFontWeight, titleFontSize, headerFontSize, timingsFontSize,
-     highlightMondayThursday, mondayThursdayColor, highlightWhiteDays, whiteDaysColor, todayColor, use24Hour,
+     highlightMondayThursday, mondayThursdayColor, highlightWhiteDays, whiteDaysColor, todayColor,
      colDate, colHijri, colFajr, colSunrise, colDhuhr, colAsr, colMaghrib, colIsha,
      dayRange, dayRangeStart, dayRangeEnd, daySingle],
     () => {
@@ -157,7 +153,7 @@ onMounted(() => {
         <UButton
             :icon="showOptions ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
             variant="ghost"
-            color="gray"
+            color="neutral"
             class="text-gray-900 dark:text-white font-semibold text-sm"
             @click="showOptions = !showOptions"
         >
@@ -170,7 +166,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showFonts ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showFonts = !showFonts"
                 >
@@ -179,18 +175,18 @@ onMounted(() => {
                 <div v-if="showFonts" class="mt-2 flex flex-col gap-3 pl-2 border-l-2 border-gray-300 dark:border-gray-700">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Header Font:</span>
-                        <USelectMenu v-model="headerFont" :options="allFontOptions" value-attribute="value"
-                            option-attribute="label" size="sm" />
+                        <USelectMenu v-model="headerFont" :items="allFontOptions" value-key="value"
+                            label-key="label" size="sm" class="w-full" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Title Font:</span>
-                        <USelectMenu v-model="titleFont" :options="allFontOptions" value-attribute="value"
-                            option-attribute="label" size="sm" />
+                        <USelectMenu v-model="titleFont" :items="allFontOptions" value-key="value"
+                            label-key="label" size="sm" class="w-full" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Timings Font:</span>
-                        <USelectMenu v-model="timingsFont" :options="allFontOptions" value-attribute="value"
-                            option-attribute="label" size="sm" />
+                        <USelectMenu v-model="timingsFont" :items="allFontOptions" value-key="value"
+                            label-key="label" size="sm" class="w-full" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Title Size: {{ titleFontSize.toFixed(1) }}x</span>
@@ -219,7 +215,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showColors ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showColors = !showColors"
                 >
@@ -249,7 +245,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showTableStyle ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showTableStyle = !showTableStyle"
                 >
@@ -258,7 +254,7 @@ onMounted(() => {
                 <div v-if="showTableStyle" class="mt-2 flex flex-col gap-3 pl-2 border-l-2 border-gray-300 dark:border-gray-700">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Alternating Row Colors:</span>
-                        <UToggle v-model="useAlternatingColors" />
+                        <USwitch v-model="useAlternatingColors" />
                     </div>
                     <div v-if="useAlternatingColors" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Even Row Color:</span>
@@ -270,13 +266,9 @@ onMounted(() => {
                     </div>
                     <div v-if="useAlternatingColors" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold"></span>
-                        <UButton variant="outline" color="gray" size="xs" @click="resetAlternatingColors">
+                        <UButton variant="outline" color="neutral" size="xs" @click="resetAlternatingColors">
                             Reset Row Colors
                         </UButton>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                        <span class="text-sm text-gray-900 dark:text-white font-semibold">24-Hour Format:</span>
-                        <UToggle v-model="use24Hour" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Table Blur: {{ tableBlur }}px</span>
@@ -295,7 +287,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showHighlights ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showHighlights = !showHighlights"
                 >
@@ -305,14 +297,14 @@ onMounted(() => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Highlight Mon/Thu:</span>
                         <div class="flex items-center gap-2">
-                            <UToggle v-model="highlightMondayThursday" />
+                            <USwitch v-model="highlightMondayThursday" />
                             <input v-if="highlightMondayThursday" type="color" v-model="mondayThursdayColor" class="color-input color-input-sm" />
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Highlight White Days:</span>
                         <div class="flex items-center gap-2">
-                            <UToggle v-model="highlightWhiteDays" />
+                            <USwitch v-model="highlightWhiteDays" />
                             <input v-if="highlightWhiteDays" type="color" v-model="whiteDaysColor" class="color-input color-input-sm" />
                         </div>
                     </div>
@@ -327,7 +319,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showColumns ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showColumns = !showColumns"
                 >
@@ -367,7 +359,7 @@ onMounted(() => {
             <div>
                 <UButton
                     :icon="showDayRange ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    variant="ghost" color="gray" size="xs"
+                    variant="ghost" color="neutral" size="xs"
                     class="text-gray-900 dark:text-white font-semibold text-xs"
                     @click="showDayRange = !showDayRange"
                 >
@@ -376,23 +368,20 @@ onMounted(() => {
                 <div v-if="showDayRange" class="mt-2 flex flex-col gap-3 pl-2 border-l-2 border-gray-300 dark:border-gray-700">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Range:</span>
-                        <USelectMenu v-model="dayRange" :options="dayRangeOptions" value-attribute="value"
-                            option-attribute="label" size="sm" />
+                        <USelectMenu v-model="dayRange" :items="dayRangeOptions" value-key="value"
+                            label-key="label" size="sm" class="w-full" />
                     </div>
                     <div v-if="dayRange === 'range'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Start Day:</span>
-                        <UInput type="number" v-model.number="dayRangeStart" size="sm" :min="1" :max="30"
-                            :ui="{ color: { white: { outline: 'text-black' } } }" />
+                        <UInput type="number" v-model.number="dayRangeStart" size="sm" :min="1" :max="30" class="w-full" />
                     </div>
                     <div v-if="dayRange === 'range'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">End Day:</span>
-                        <UInput type="number" v-model.number="dayRangeEnd" size="sm" :min="1" :max="30"
-                            :ui="{ color: { white: { outline: 'text-black' } } }" />
+                        <UInput type="number" v-model.number="dayRangeEnd" size="sm" :min="1" :max="30" class="w-full" />
                     </div>
                     <div v-if="dayRange === 'single'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Day:</span>
-                        <UInput type="number" v-model.number="daySingle" size="sm" :min="1" :max="30"
-                            :ui="{ color: { white: { outline: 'text-black' } } }" />
+                        <UInput type="number" v-model.number="daySingle" size="sm" :min="1" :max="30" class="w-full" />
                     </div>
                 </div>
             </div>

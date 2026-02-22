@@ -1,5 +1,5 @@
 <script setup>
-import moment from "moment-timezone";
+import dayjs from 'dayjs';
 
 const props = defineProps({
     prayerTimes: Object,
@@ -77,13 +77,16 @@ const filteredPrayerTimes = computed(() => {
     return days.filter((_, i) => i + 1 >= start && i + 1 <= end);
 });
 
+function isToday(day) {
+    const today = dayjs().format('YYYY-MM-DD');
+    return dayjs(day.date).format('YYYY-MM-DD') === today;
+}
+
 function getRowStyle(day, index) {
     const style = {};
-    const today = moment().format('YYYY-MM-DD');
-    const isToday = moment(day.date).format('YYYY-MM-DD') === today;
 
-    if (isToday) {
-        style.backgroundColor = todayColor.value;
+    // Today is handled via CSS class, not inline style (so it can be removed before download)
+    if (isToday(day)) {
         return style;
     }
 
@@ -119,14 +122,14 @@ const timeFormat = computed(() => opts.value.use24Hour ? 'HH:mm' : 'h:mm A');
 
 function getCellValue(day, colKey) {
     switch (colKey) {
-        case 'date': return ("0" + moment(day.date).format('D')).slice(-2);
+        case 'date': return ("0" + dayjs(day.date).format('D')).slice(-2);
         case 'hijri': return ("0" + day.hijri.date.getDate()).slice(-2);
-        case 'fajr': return moment(day.fajr).format(timeFormat.value);
-        case 'sunrise': return moment(day.sunrise).format(timeFormat.value);
-        case 'dhuhr': return moment(day.dhuhr).format(timeFormat.value);
-        case 'asr': return moment(day.asr).format(timeFormat.value);
-        case 'maghrib': return moment(day.maghrib).format(timeFormat.value);
-        case 'isha': return moment(day.isha).format(timeFormat.value);
+        case 'fajr': return dayjs(day.fajr).format(timeFormat.value);
+        case 'sunrise': return dayjs(day.sunrise).format(timeFormat.value);
+        case 'dhuhr': return dayjs(day.dhuhr).format(timeFormat.value);
+        case 'asr': return dayjs(day.asr).format(timeFormat.value);
+        case 'maghrib': return dayjs(day.maghrib).format(timeFormat.value);
+        case 'isha': return dayjs(day.isha).format(timeFormat.value);
         default: return '';
     }
 }
@@ -134,7 +137,7 @@ function getCellValue(day, colKey) {
 
 
 <template>
-    <div class="prayer-times-table-container">
+    <div class="prayer-times-table-container" :style="{ '--today-color': todayColor }">
         <table v-if="prayerTimes" class="prayer-times-table">
             <thead>
                 <tr class="prayer-times-table-header-row">
@@ -143,6 +146,7 @@ function getCellValue(day, colKey) {
             </thead>
             <tbody>
                 <tr v-for="(day, index) in filteredPrayerTimes" :key="index"
+                    :class="{ today: isToday(day) }"
                     :style="getRowStyle(day, index)">
                     <td v-for="col in visibleColumns" :key="col.key" :style="tdStyle">
                         {{ getCellValue(day, col.key) }}
@@ -155,4 +159,7 @@ function getCellValue(day, colKey) {
 
 
 <style>
+.prayer-times-table tr.today {
+    background-color: var(--today-color, #FF0000);
+}
 </style>

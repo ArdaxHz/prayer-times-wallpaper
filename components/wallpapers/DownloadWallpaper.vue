@@ -1,8 +1,8 @@
 <script setup>
+const toast = useToast();
+
 import html2canvas from 'html2canvas';
 import domtoimage from 'dom-to-image';
-
-const { notify } = useNotification();
 
 const props = defineProps({
     wallpaperRef: Object,
@@ -37,15 +37,19 @@ function triggerDownload(url, isObjectURL) {
 
 function downloadImage() {
     if (!props.wallpaperRef || !props.wallpaperRef.value) {
-        notify({
+        toast.add({
             title: "Wallpaper not ready.",
-            text: "Please wait for the wallpaper to load before downloading.",
-            type: "warn"
+            description: "Please wait for the wallpaper to load before downloading.",
+            color: "warning"
         });
         return;
     }
 
     isLoading.value = true;
+
+    const el = props.wallpaperRef.value;
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
 
     const config = {
         style: {
@@ -53,12 +57,14 @@ function downloadImage() {
             alignItems: 'start',
             justifyContent: 'start',
         },
+        width,
+        height,
         imageTimeout: 0,
         foreignObjectRendering: true
     };
 
     // Save reference to today element before removing class
-    const todayElements = props.wallpaperRef.value.getElementsByClassName('today');
+    const todayElements = el.getElementsByClassName('today');
     const todayElement = todayElements.length > 0 ? todayElements[0] : null;
 
     if (todayElement) {
@@ -66,29 +72,29 @@ function downloadImage() {
     }
 
     if (props.usingSafari) {
-        // Safari path: use html2canvas
-        html2canvas(props.wallpaperRef.value, config)
+        // Safari/iOS path: use html2canvas
+        html2canvas(el, { ...config, scale: 2 })
             .then(function (canvas) {
                 canvas.toBlob(function (blob) {
                     if (!blob) {
                         console.error('Canvas is empty.');
-                        notify({
+                        toast.add({
                             title: "Download failed.",
-                            text: "The image could not be rendered. Please try again.",
-                            type: "error"
+                            description: "The image could not be rendered. Please try again.",
+                            color: "error"
                         });
                         return;
                     }
                     const url = URL.createObjectURL(blob);
                     triggerDownload(url, true);
-                }, 'image/jpeg');
+                }, 'image/jpeg', 0.95);
             })
             .catch(function (error) {
                 console.error('html2canvas error:', error);
-                notify({
+                toast.add({
                     title: "Error downloading image.",
-                    text: error.message || "Unknown error occurred.",
-                    type: "error"
+                    description: error.message || "Unknown error occurred.",
+                    color: "error"
                 });
             })
             .finally(function () {
@@ -99,16 +105,16 @@ function downloadImage() {
             });
     } else {
         // Non-Safari path: use dom-to-image
-        domtoimage.toJpeg(props.wallpaperRef.value, config)
+        domtoimage.toJpeg(el, config)
             .then(function (url) {
                 triggerDownload(url, false);
             })
             .catch(function (error) {
                 console.error('dom-to-image error:', error);
-                notify({
+                toast.add({
                     title: "Error downloading image.",
-                    text: error.message || "Unknown error occurred.",
-                    type: "error"
+                    description: error.message || "Unknown error occurred.",
+                    color: "error"
                 });
             })
             .finally(function () {

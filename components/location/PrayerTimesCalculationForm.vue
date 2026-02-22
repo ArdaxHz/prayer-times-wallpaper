@@ -1,6 +1,6 @@
 <script setup>
 import { calculateAdhanMonth, calculateAdhanHijriMonth, getNext12HijriMonths } from '~/composables/adhantimes';
-const { notify } = useNotification();
+const toast = useToast();
 
 const props = defineProps({
     latitude: Number,
@@ -8,7 +8,7 @@ const props = defineProps({
     gregorianDate: Object
 })
 
-const emits = defineEmits(['updatePrayerTimetable', 'updateSelectedHijriMonth'])
+const emits = defineEmits(['updatePrayerTimetable', 'updateSelectedHijriMonth', 'updateUse24Hour'])
 
 const fajrAngle = ref(18);
 const sightingCommittee = ref('MuslimWorldLeague');
@@ -37,6 +37,20 @@ const gregorianMonths = ref((function () {
     return rest.concat(gone);
 })());
 
+// Hijri date convention
+const hijriConvention = ref('midnight');
+const hijriConventionOptions = [
+    { value: 'midnight', label: 'Midnight' },
+    { value: 'maghrib', label: 'Maghrib' },
+];
+
+// Time format
+const use24Hour = ref(false);
+const timeFormatOptions = [
+    { value: false, label: '12 Hour' },
+    { value: true, label: '24 Hour' },
+];
+
 // Advanced settings
 const showAdvanced = ref(false);
 const showAdjustments = ref(false);
@@ -56,7 +70,7 @@ const adjMaghrib = ref(0);
 const adjIsha = ref(0);
 
 const madhabs = [{ "value": "shafi", "label": "Early" }, { "value": "hanafi", "label": "Late" }];
-const sightingCommitteeList = [{ "id": "MuslimWorldLeague", "name": "Muslim World League" }, { "id": "Egyptian", "name": "Egyptian" }, { "id": "Karachi", "name": "Karachi" }, { "id": "UmmAlQura", "name": "Umm Al Qura" }, { "id": "Dubai", "name": "Dubai" }, { "id": "MoonsightingCommittee", "name": "Moonsighting Committee" }, { "id": "NorthAmerica", "name": "North America" }, { "id": "Kuwait", "name": "Kuwait" }, { "id": "Qatar", "name": "Qatar" }, { "id": "Singapore", "name": "Singapore" }, { "id": "Tehran", "name": "Tehran" }, { "id": "Turkey", "name": "Turkey" }];
+const sightingCommitteeList = [{ "value": "MuslimWorldLeague", "label": "Muslim World League" }, { "value": "Egyptian", "label": "Egyptian" }, { "value": "Karachi", "label": "Karachi" }, { "value": "UmmAlQura", "label": "Umm Al Qura" }, { "value": "Dubai", "label": "Dubai" }, { "value": "MoonsightingCommittee", "label": "Moonsighting Committee" }, { "value": "NorthAmerica", "label": "North America" }, { "value": "Kuwait", "label": "Kuwait" }, { "value": "Qatar", "label": "Qatar" }, { "value": "Singapore", "label": "Singapore" }, { "value": "Tehran", "label": "Tehran" }, { "value": "Turkey", "label": "Turkey" }];
 const highLatitudeRules = [
     { value: 'recommended', label: 'Recommended' },
     { value: 'MiddleOfTheNight', label: 'Middle of the Night' },
@@ -110,6 +124,7 @@ function buildCustomParams() {
         highLatitudeRule: highLatitudeRule.value,
         polarCircleResolution: polarCircleResolution.value,
         rounding: rounding.value,
+        hijriConvention: hijriConvention.value,
     };
 
     if (isMoonsightingCommittee.value) {
@@ -173,10 +188,10 @@ function calculateMonth() {
         }
     } catch (error) {
         console.error('Prayer time calculation error:', error);
-        notify({
+        toast.add({
             title: "Calculation error.",
-            text: error.message || "An error occurred while calculating prayer times.",
-            type: "error"
+            description: error.message || "An error occurred while calculating prayer times.",
+            color: "error"
         });
     }
 }
@@ -188,11 +203,15 @@ function autoCalculate() {
 // Watch all reactive form values
 watch(
     [fajrAngle, sightingCommittee, madhabMethod, selectedHijriMonthIndex, formMonthSelect, calendarType,
-     highLatitudeRule, polarCircleResolution, shafaq, rounding,
+     hijriConvention, highLatitudeRule, polarCircleResolution, shafaq, rounding,
      ishaAngle, maghribAngle,
      adjFajr, adjSunrise, adjDhuhr, adjAsr, adjMaghrib, adjIsha],
     () => { calculateMonth(); }
 );
+
+watch(use24Hour, (val) => {
+    emits('updateUse24Hour', val);
+});
 
 watch(() => props.latitude, () => {
     autoCalculate()
@@ -212,45 +231,50 @@ onMounted(() => {
             <!-- Fajr Angle -->
             <div class="form-row">
                 <div class="form-label-cell">
-                    <UFormGroup label="Fajr Angle:" :ui="{ label: { base: 'text-lg sm:text-xl text-gray-900 dark:text-white font-semibold' } }" />
+                    <UFormField label="Fajr Angle:">
+                        <template #label>
+                            <span class="text-lg sm:text-xl text-gray-900 dark:text-white font-semibold">Fajr Angle:</span>
+                        </template>
+                    </UFormField>
                 </div>
                 <div class="form-input-cell">
-                    <UInput type="number" v-model="fajrAngle" size="md" :min="0" :max="90" step="0.1"
-                        :ui="{ rounded: 'rounded-lg', color: { white: { outline: 'text-black' } } }" />
+                    <UInput type="number" v-model="fajrAngle" size="md" :min="0" :max="90" step="0.1" class="w-full" />
                 </div>
             </div>
 
             <!-- Sighting Committee -->
             <div class="form-row">
                 <div class="form-label-cell">
-                    <UFormGroup label="Sighting Committee:"
-                        :ui="{ label: { base: 'text-lg sm:text-xl text-gray-900 dark:text-white font-semibold' } }" />
+                    <UFormField label="Sighting Committee:">
+                        <template #label>
+                            <span class="text-lg sm:text-xl text-gray-900 dark:text-white font-semibold">Sighting Committee:</span>
+                        </template>
+                    </UFormField>
                 </div>
                 <div class="form-input-cell">
-                    <UInputMenu v-model="sightingCommittee" :options="sightingCommitteeList" value-attribute="id"
-                        option-attribute="name" size="md" />
+                    <USelectMenu v-model="sightingCommittee" :items="sightingCommitteeList" value-key="value"
+                        label-key="label" size="md" class="w-full" />
                 </div>
             </div>
 
             <!-- Asr Time -->
             <div class="form-row">
                 <div class="form-label-cell">
-                    <UFormGroup label="Asr Time:" :ui="{ label: { base: 'text-lg sm:text-xl text-gray-900 dark:text-white font-semibold' } }" />
+                    <UFormField label="Asr Time:">
+                        <template #label>
+                            <span class="text-lg sm:text-xl text-gray-900 dark:text-white font-semibold">Asr Time:</span>
+                        </template>
+                    </UFormField>
                 </div>
                 <div class="form-input-cell">
                     <div class="form-radio-group">
-                        <URadio v-for="madhab of madhabs" :key="madhab.value" v-model="madhabMethod" v-bind="madhab"
-                            :label="madhab.label" class="flex radio-option group" :ui="{
-                        label: `flex cursor-pointer items-center text-md px-3 py-1 rounded-lg hover:shadow-lg text-gray-900 dark:text-white
-                        ring-1 ring-inset ring-gray-300
-                        focus:ring-2 focus:ring-primary-500
-                        group-has-[:checked]:bg-primary-500 group-has-[:checked]:text-white group-has-[:checked]:ring-primary-500
-                        hover:bg-primary-50 group-has-[:checked]:hover:bg-primary-600
-                        dark:hover:bg-primary-950 dark:ring-gray-700 dark:focus:ring-primary-400
-                        dark:group-has-[:checked]:bg-primary-700 dark:group-has-[:checked]:ring-primary-700
-                        dark:group-has-[:checked]:hover:bg-primary-600 dark:group-has-[:checked]:hover:ring-primary-600 `,
-                        inner: 'm-0',
-                    }" />
+                        <button v-for="madhab of madhabs" :key="madhab.value"
+                            type="button"
+                            class="pill-btn"
+                            :class="{ 'pill-btn-active': madhabMethod === madhab.value }"
+                            @click="madhabMethod = madhab.value">
+                            {{ madhab.label }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -258,22 +282,21 @@ onMounted(() => {
             <!-- Calendar -->
             <div class="form-row">
                 <div class="form-label-cell">
-                    <UFormGroup label="Calendar:" :ui="{ label: { base: 'text-lg sm:text-xl text-gray-900 dark:text-white font-semibold' } }" />
+                    <UFormField label="Calendar:">
+                        <template #label>
+                            <span class="text-lg sm:text-xl text-gray-900 dark:text-white font-semibold">Calendar:</span>
+                        </template>
+                    </UFormField>
                 </div>
                 <div class="form-input-cell">
                     <div class="form-radio-group">
-                        <URadio v-for="cal of calendarTypes" :key="cal.value" v-model="calendarType" v-bind="cal"
-                            :label="cal.label" class="flex radio-option group" :ui="{
-                        label: `flex cursor-pointer items-center text-md px-3 py-1 rounded-lg hover:shadow-lg text-gray-900 dark:text-white
-                        ring-1 ring-inset ring-gray-300
-                        focus:ring-2 focus:ring-primary-500
-                        group-has-[:checked]:bg-primary-500 group-has-[:checked]:text-white group-has-[:checked]:ring-primary-500
-                        hover:bg-primary-50 group-has-[:checked]:hover:bg-primary-600
-                        dark:hover:bg-primary-950 dark:ring-gray-700 dark:focus:ring-primary-400
-                        dark:group-has-[:checked]:bg-primary-700 dark:group-has-[:checked]:ring-primary-700
-                        dark:group-has-[:checked]:hover:bg-primary-600 dark:group-has-[:checked]:hover:ring-primary-600 `,
-                        inner: 'm-0',
-                    }" />
+                        <button v-for="cal of calendarTypes" :key="cal.value"
+                            type="button"
+                            class="pill-btn"
+                            :class="{ 'pill-btn-active': calendarType === cal.value }"
+                            @click="calendarType = cal.value">
+                            {{ cal.label }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -281,15 +304,20 @@ onMounted(() => {
             <!-- Month -->
             <div class="form-row">
                 <div class="form-label-cell">
-                    <UFormGroup label="Month:" :ui="{ label: { base: 'text-lg sm:text-xl text-gray-900 dark:text-white font-semibold' } }" />
+                    <UFormField label="Month:">
+                        <template #label>
+                            <span class="text-lg sm:text-xl text-gray-900 dark:text-white font-semibold">Month:</span>
+                        </template>
+                    </UFormField>
                 </div>
                 <div class="form-input-cell">
-                    <USelectMenu v-if="isHijri" v-model="selectedHijriMonthIndex" :options="hijriMonthOptions"
-                        value-attribute="value" option-attribute="label" size="md" />
-                    <USelectMenu v-else v-model="formMonthSelect" :options="gregorianMonths"
-                        value-attribute="index" option-attribute="name" size="md" />
+                    <USelectMenu v-if="isHijri" v-model="selectedHijriMonthIndex" :items="hijriMonthOptions"
+                        value-key="value" label-key="label" size="md" class="w-full" />
+                    <USelectMenu v-else v-model="formMonthSelect" :items="gregorianMonths"
+                        value-key="index" label-key="name" size="md" class="w-full" />
                 </div>
             </div>
+
         </div>
 
         <!-- Advanced Settings -->
@@ -297,7 +325,7 @@ onMounted(() => {
             <UButton
                 :icon="showAdvanced ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
                 variant="ghost"
-                color="gray"
+                color="neutral"
                 class="text-gray-900 dark:text-white font-semibold text-sm"
                 @click="showAdvanced = !showAdvanced"
             >
@@ -306,36 +334,58 @@ onMounted(() => {
 
             <div v-if="showAdvanced" class="mt-3 flex flex-col gap-4 pl-2 border-l-2 border-gray-300 dark:border-gray-600">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <span class="text-sm text-gray-900 dark:text-white font-semibold">Time Format:</span>
+                    <div class="form-radio-group">
+                        <button v-for="opt of timeFormatOptions" :key="opt.label"
+                            type="button"
+                            class="pill-btn pill-btn-sm"
+                            :class="{ 'pill-btn-active': use24Hour === opt.value }"
+                            @click="use24Hour = opt.value">
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <span class="text-sm text-gray-900 dark:text-white font-semibold">Hijri Changes At:</span>
+                    <div class="form-radio-group">
+                        <button v-for="opt of hijriConventionOptions" :key="opt.value"
+                            type="button"
+                            class="pill-btn pill-btn-sm"
+                            :class="{ 'pill-btn-active': hijriConvention === opt.value }"
+                            @click="hijriConvention = opt.value">
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">High Latitude Rule:</span>
-                    <USelectMenu v-model="highLatitudeRule" :options="highLatitudeRules" value-attribute="value"
-                        option-attribute="label" size="sm" />
+                    <USelect v-model="highLatitudeRule" :items="highLatitudeRules" value-key="value"
+                        label-key="label" size="sm" class="w-full" />
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">Polar Circle Resolution:</span>
-                    <USelectMenu v-model="polarCircleResolution" :options="polarCircleResolutions" value-attribute="value"
-                        option-attribute="label" size="sm" />
+                    <USelect v-model="polarCircleResolution" :items="polarCircleResolutions" value-key="value"
+                        label-key="label" size="sm" class="w-full" />
                 </div>
                 <div v-if="isMoonsightingCommittee" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">Shafaq (Twilight):</span>
-                    <USelectMenu v-model="shafaq" :options="shafaqOptions" value-attribute="value"
-                        option-attribute="label" size="sm" />
+                    <USelect v-model="shafaq" :items="shafaqOptions" value-key="value"
+                        label-key="label" size="sm" class="w-full" />
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">Rounding:</span>
-                    <USelectMenu v-model="rounding" :options="roundingOptions" value-attribute="value"
-                        option-attribute="label" size="sm" />
+                    <USelect v-model="rounding" :items="roundingOptions" value-key="value"
+                        label-key="label" size="sm" class="w-full" />
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">Isha Angle Override:</span>
                     <UInput type="number" v-model="ishaAngle" size="sm" placeholder="Default"
-                        :min="0" :max="90" step="0.1"
-                        :ui="{ color: { white: { outline: 'text-black' } } }" />
+                        :min="0" :max="90" step="0.1" class="w-full" />
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                     <span class="text-sm text-gray-900 dark:text-white font-semibold">Maghrib Angle Override:</span>
                     <UInput type="number" v-model="maghribAngle" size="sm" placeholder="Default"
-                        :min="0" :max="90" step="0.1"
-                        :ui="{ color: { white: { outline: 'text-black' } } }" />
+                        :min="0" :max="90" step="0.1" class="w-full" />
                 </div>
 
                 <!-- Per-prayer adjustments — each ref bound explicitly -->
@@ -343,7 +393,7 @@ onMounted(() => {
                     <UButton
                         :icon="showAdjustments ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
                         variant="ghost"
-                        color="gray"
+                        color="neutral"
                         class="text-gray-900 dark:text-white font-semibold text-xs"
                         size="xs"
                         @click="showAdjustments = !showAdjustments"
@@ -354,33 +404,27 @@ onMounted(() => {
                     <div v-if="showAdjustments" class="mt-2 flex flex-col gap-2 pl-2 border-l-2 border-gray-300 dark:border-gray-700">
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Fajr:</span>
-                            <UInput type="number" v-model="adjFajr" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjFajr" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Sunrise:</span>
-                            <UInput type="number" v-model="adjSunrise" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjSunrise" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Dhuhr:</span>
-                            <UInput type="number" v-model="adjDhuhr" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjDhuhr" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Asr:</span>
-                            <UInput type="number" v-model="adjAsr" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjAsr" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Maghrib:</span>
-                            <UInput type="number" v-model="adjMaghrib" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjMaghrib" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                         <div class="grid grid-cols-2 gap-2 items-center">
                             <span class="text-xs text-gray-500 dark:text-gray-300">Isha:</span>
-                            <UInput type="number" v-model="adjIsha" size="xs" :min="-60" :max="60" step="1"
-                                :ui="{ color: { white: { outline: 'text-black' } } }" />
+                            <UInput type="number" v-model="adjIsha" size="xs" :min="-60" :max="60" step="1" class="w-full" />
                         </div>
                     </div>
                 </div>
@@ -445,8 +489,54 @@ onMounted(() => {
     margin: 0;
 }
 
-.form-radio-group input[type="radio"] {
-    display: none;
-    margin: 0;
+.pill-btn {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #111827;
+    box-shadow: inset 0 0 0 1px #d1d5db;
+    transition: all 0.15s;
+}
+
+.pill-btn-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+}
+
+.pill-btn:hover {
+    background-color: #ecfeff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.pill-btn-active {
+    background-color: #0891b2;
+    color: white;
+    box-shadow: inset 0 0 0 1px #0891b2;
+}
+
+.pill-btn-active:hover {
+    background-color: #0e7490;
+}
+
+.dark .pill-btn {
+    color: white;
+    box-shadow: inset 0 0 0 1px #374151;
+}
+
+.dark .pill-btn:hover {
+    background-color: #083344;
+}
+
+.dark .pill-btn-active {
+    background-color: #155e75;
+    box-shadow: inset 0 0 0 1px #155e75;
+}
+
+.dark .pill-btn-active:hover {
+    background-color: #0e7490;
+    box-shadow: inset 0 0 0 1px #0e7490;
 }
 </style>

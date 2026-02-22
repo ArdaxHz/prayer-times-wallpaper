@@ -171,6 +171,7 @@ onMounted(() => {
 
 .prayer-times-table {
     border-collapse: collapse;
+    border-spacing: 0;
     color: white;
     margin: auto;
     text-align: center;
@@ -179,10 +180,9 @@ onMounted(() => {
 }
 
 tbody:before {
-    content: "@";
+    content: "";
     display: block;
-    line-height: 7px;
-    text-indent: -99999px;
+    height: 7px;
 }
 
 thead {
@@ -215,6 +215,11 @@ thead {
     border-right: none;
 }
 
+.prayer-times-table tr {
+    border: none;
+    outline: none;
+}
+
 .prayer-times-table td {
     font-family: 'Gilroy';
     padding-block: 0.25rem;
@@ -224,5 +229,7 @@ thead {
     line-height: 2.2rem;
     overflow: hidden;
     white-space: nowrap;
+    border: none;
+    outline: none;
 }
 </style>

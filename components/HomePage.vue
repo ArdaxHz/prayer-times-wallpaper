@@ -1,5 +1,5 @@
 <script setup>
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { convertToHijri } from '~/composables/adhantimes';
 
 const latitude = ref(null);
@@ -61,7 +61,7 @@ const props = defineProps({
 });
 
 watch(() => prayerTimes.value, (newValue, _) => {
-    const today = moment().format('YYYY-MM-DD');
+    const today = dayjs().format('YYYY-MM-DD');
     const prayerTimesToday = newValue[today];
 
     if (prayerTimesToday) {
@@ -99,7 +99,7 @@ const wallpaperName = computed(() => {
                 .replace(/\s+/g, '-')
                 .replace(/[^a-z0-9_-]/g, '');
         } else {
-            name = `${area}-${country}_${moment(gregorianDate.value).format('MM-YY')}_prayer-timetable`.toLowerCase();
+            name = `${area}-${country}_${dayjs(gregorianDate.value).format('MM-YY')}_prayer-timetable`.toLowerCase();
         }
     }
     return name;
@@ -119,8 +119,12 @@ function updateSelectedHijriMonth(data) {
     selectedHijriMonth.value = data;
 }
 
+function updateUse24Hour(val) {
+    wallpaperOptions.value = { ...wallpaperOptions.value, use24Hour: val };
+}
+
 function updateWallpaperOptions(opts) {
-    wallpaperOptions.value = opts;
+    wallpaperOptions.value = { ...wallpaperOptions.value, ...opts };
 }
 
 function updateWallpaperRef(ref) {
@@ -173,7 +177,8 @@ watch(() => props.windowWidth, (newValue, _) => {
                 <LocationPrayerTimesCalculationForm :latitude="latitude" :longitude="longitude"
                     :gregorianDate="gregorianDate"
                     @updatePrayerTimetable="updatePrayerTimes"
-                    @updateSelectedHijriMonth="updateSelectedHijriMonth" />
+                    @updateSelectedHijriMonth="updateSelectedHijriMonth"
+                    @updateUse24Hour="updateUse24Hour" />
             </div>
             <WallpapersWallpaperOptions @updateWallpaperOptions="updateWallpaperOptions" />
             <div class="button-group">

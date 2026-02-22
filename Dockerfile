@@ -1,4 +1,4 @@
-FROM node:20.14.0-alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/ec_prayer_times_app
 

@@ -5,7 +5,7 @@ const windowHeight = ref(0);
 const usingSafari = ref(false);
 
 const colorMode = useColorMode();
-const { notify } = useNotification();
+const toast = useToast();
 
 const isDark = computed({
   get: () => colorMode.value === 'dark',
@@ -15,10 +15,14 @@ const isDark = computed({
 const isSafari = () => {
   const ua = navigator.userAgent.toLowerCase();
   const iOS = !!ua.match(/iP(ad|od|hone)/i);
-  const webkit = !!ua.match(/WebKit/i);
-  const notsafari = ua.match(/(?:chrome|firefox|opera|brave|CriOS|FxiOS)/i);
 
-  return (iOS || webkit) && !notsafari;
+  // All iOS browsers use WebKit engine, so always use html2canvas on iOS
+  if (iOS) return true;
+
+  const webkit = !!ua.match(/WebKit/i);
+  const notSafariDesktop = ua.match(/(?:chrome|firefox|opera|brave)/i);
+
+  return webkit && !notSafariDesktop;
 };
 
 useResizeObserver(rootContainer, (entries) => {
@@ -29,9 +33,9 @@ useResizeObserver(rootContainer, (entries) => {
 });
 
 onMounted(() => {
-  notify({
+  toast.add({
     title: "Please enable location access.",
-    text: "This calculator needs location access to work, please enable location access for this calculator to work properly.",
+    description: "This calculator needs location access to work, please enable location access for this calculator to work properly.",
     duration: 5000
   });
 
@@ -39,12 +43,11 @@ onMounted(() => {
     usingSafari.value = true;
     console.log("Using Safari.")
 
-    notify({
+    toast.add({
       title: "Safari detected, image downloading may not work.",
-      text: "Image downloading does not work correctly on Safari, please use a different browser if the image downloaded is blank.",
-      type: "warn",
-      duration: -1,
-      closeOnClick: false
+      description: "Image downloading does not work correctly on Safari, please use a different browser if the image downloaded is blank.",
+      color: "warning",
+      duration: 0,
     });
   }
 });
@@ -58,34 +61,34 @@ useHead({
 </script>
 
 <template>
-  <div ref="rootContainer" class="root-container mx-auto min-w-[5rem] min-h-[80vh] w-[90%] sm:w-[85%] md:w-[80%] lg:w-[75%] max-w-[1400px]">
-    <NuxtNotifications position="top left" :speed="500" />
+  <UApp>
+    <div ref="rootContainer" class="root-container mx-auto min-w-[5rem] min-h-[80vh] w-[90%] sm:w-[85%] md:w-[80%] lg:w-[75%] max-w-[1400px]">
+      <div class="px-4">
+        <!-- Header -->
+        <header class="flex gap-2 items-center justify-center py-6">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Prayer Times Wallpaper
+          </h1>
+        </header>
 
-    <div class="px-4">
-      <!-- Header -->
-      <header class="flex gap-2 items-center justify-center py-6">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-          Prayer Times Wallpaper
-        </h1>
-      </header>
-
-      <div class="pb-10">
-        <HomePage :windowWidth="windowWidth" :windowHeight="windowHeight" :usingSafari="usingSafari" />
+        <div class="pb-10">
+          <HomePage :windowWidth="windowWidth" :windowHeight="windowHeight" :usingSafari="usingSafari" />
+        </div>
       </div>
-    </div>
 
-    <footer class="footer flex gap-2 items-center justify-center text-center py-6 px-4 mt-8 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
-      <p class="m-0 leading-[0]">Built by <a href="https://github.com/ArdaxHz" target="_blank" class="footer-link text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Ardax</a> · <a href="https://github.com/ArdaxHz/prayer-times-wallpaper" target="_blank" class="footer-link text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Source</a> · 2026</p>
-      <UButton
-          :icon="isDark ? 'i-heroicons-sun-20-solid' : 'i-heroicons-moon-20-solid'"
-          variant="ghost"
-          color="gray"
-          size="lg"
-          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          @click="isDark = !isDark"
-        />
-    </footer>
-  </div>
+      <footer class="footer flex gap-2 items-center justify-center text-center py-6 px-4 mt-8 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
+        <p class="m-0 leading-[0]">Built by <a href="https://github.com/ArdaxHz" target="_blank" class="footer-link text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Ardax</a> · <a href="https://github.com/ArdaxHz/prayer-times-wallpaper" target="_blank" class="footer-link text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Source</a> · 2026</p>
+        <UButton
+            :icon="isDark ? 'i-heroicons-sun-20-solid' : 'i-heroicons-moon-20-solid'"
+            variant="ghost"
+            color="neutral"
+            size="lg"
+            :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            @click="isDark = !isDark"
+          />
+      </footer>
+    </div>
+  </UApp>
 </template>
 
 
