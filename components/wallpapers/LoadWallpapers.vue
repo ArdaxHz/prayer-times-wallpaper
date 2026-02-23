@@ -11,7 +11,7 @@ const images = computed(() => {
         return {
             preview: new URL(image, import.meta.url),
             template: new URL(image, import.meta.url),
-            typeface: "WallpapersDesignsWhiteTextYellowTableDesign"
+            typeface: "WallpapersTableDesign"
         }
     });
 });

@@ -24,9 +24,17 @@ const useAlternatingColors = ref(true);
 const evenRowColor = ref('#FFFFFF1A');
 const oddRowColor = ref('#0000001A');
 
-// Table blur
-const tableBlur = ref(0);
-const tableBlurOpacity = ref(0);
+// Table blur — opacity range -1 to 1: negative = black overlay, positive = white overlay
+const tableBlur = ref(20);
+const tableBlurOpacity = ref(-0.2);
+
+// Table vertical offset (px)
+const tableOffset = ref(0);
+
+// Title drop shadow
+const titleDropShadow = ref(true);
+const titleShadowBlur = ref(12);
+const titleShadowOpacity = ref(1.0);
 
 // Fonts
 const headerFont = ref('Gilroy');
@@ -34,7 +42,10 @@ const titleFont = ref('Gilroy');
 const timingsFont = ref('Gilroy');
 
 // Title font weight
-const titleFontWeight = ref(300);
+const titleFontWeight = ref(600);
+
+// Auto text color based on overlay luminosity
+const autoTextColor = ref(true);
 
 // Font size scales (per element)
 const titleFontSize = ref(1.0);
@@ -83,19 +94,33 @@ function resetAlternatingColors() {
     oddRowColor.value = '#0000001A';
 }
 
+// Compute auto text color from overlay luminosity
+const computedTimingsTextColor = computed(() => {
+    if (!autoTextColor.value) return timingsTextColor.value;
+    // If overlay is dark (negative opacity), text should be white; if bright (positive), text should be black
+    if (tableBlurOpacity.value < -0.15) return '#FFFFFF';
+    if (tableBlurOpacity.value > 0.15) return '#000000';
+    return timingsTextColor.value; // Near zero = transparent overlay, use manual color
+});
+
 function buildOptions() {
     return {
         headerBgColor: headerBgColor.value,
         headerTextColor: headerTextColor.value,
         titleTextColor: titleTextColor.value,
         titleBgColor: titleBgColor.value,
-        timingsTextColor: timingsTextColor.value,
+        timingsTextColor: computedTimingsTextColor.value,
         tableBgColor: tableBgColor.value,
         useAlternatingColors: useAlternatingColors.value,
         evenRowColor: evenRowColor.value,
         oddRowColor: oddRowColor.value,
         tableBlur: tableBlur.value,
         tableBlurOpacity: tableBlurOpacity.value,
+        tableOffset: tableOffset.value,
+        titleDropShadow: titleDropShadow.value,
+        titleShadowBlur: titleShadowBlur.value,
+        titleShadowOpacity: titleShadowOpacity.value,
+        autoTextColor: autoTextColor.value,
         headerFont: headerFont.value,
         titleFont: titleFont.value,
         timingsFont: timingsFont.value,
@@ -128,7 +153,8 @@ function buildOptions() {
 watch(
     [headerBgColor, headerTextColor, titleTextColor, titleBgColor, timingsTextColor, tableBgColor,
      useAlternatingColors, evenRowColor, oddRowColor,
-     tableBlur, tableBlurOpacity,
+     tableBlur, tableBlurOpacity, tableOffset,
+     titleDropShadow, titleShadowBlur, titleShadowOpacity, autoTextColor,
      headerFont, titleFont, timingsFont, titleFontWeight, titleFontSize, headerFontSize, timingsFontSize,
      highlightMondayThursday, mondayThursdayColor, highlightWhiteDays, whiteDaysColor, todayColor,
      colDate, colHijri, colFajr, colSunrise, colDhuhr, colAsr, colMaghrib, colIsha,
@@ -208,6 +234,20 @@ onMounted(() => {
                         <input type="range" v-model.number="timingsFontSize" min="0.5" max="2.0" step="0.1"
                             class="w-full accent-primary-500" />
                     </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Title Drop Shadow:</span>
+                        <USwitch v-model="titleDropShadow" />
+                    </div>
+                    <div v-if="titleDropShadow" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Shadow Blur: {{ titleShadowBlur }}px</span>
+                        <input type="range" v-model.number="titleShadowBlur" min="0" max="20" step="1"
+                            class="w-full accent-primary-500" />
+                    </div>
+                    <div v-if="titleDropShadow" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Shadow Strength: {{ titleShadowOpacity.toFixed(1) }}</span>
+                        <input type="range" v-model.number="titleShadowOpacity" min="0" max="1" step="0.1"
+                            class="w-full accent-primary-500" />
+                    </div>
                 </div>
             </div>
 
@@ -253,6 +293,25 @@ onMounted(() => {
                 </UButton>
                 <div v-if="showTableStyle" class="mt-2 flex flex-col gap-3 pl-2 border-l-2 border-gray-300 dark:border-gray-700">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Table Blur: {{ tableBlur }}px</span>
+                        <input type="range" v-model.number="tableBlur" min="0" max="40" step="1"
+                            class="w-full accent-primary-500" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Overlay: {{ tableBlurOpacity > 0 ? 'White' : tableBlurOpacity < 0 ? 'Black' : 'None' }} {{ Math.abs(tableBlurOpacity).toFixed(1) }}</span>
+                        <input type="range" v-model.number="tableBlurOpacity" min="-1" max="1" step="0.05"
+                            class="w-full accent-primary-500" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Table Offset: {{ tableOffset }}px</span>
+                        <input type="range" v-model.number="tableOffset" min="-300" max="300" step="10"
+                            class="w-full accent-primary-500" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Auto Text Color:</span>
+                        <USwitch v-model="autoTextColor" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Alternating Row Colors:</span>
                         <USwitch v-model="useAlternatingColors" />
                     </div>
@@ -269,16 +328,6 @@ onMounted(() => {
                         <UButton variant="outline" color="neutral" size="xs" @click="resetAlternatingColors">
                             Reset Row Colors
                         </UButton>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Table Blur: {{ tableBlur }}px</span>
-                        <input type="range" v-model.number="tableBlur" min="0" max="20" step="1"
-                            class="w-full accent-primary-500" />
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Blur Opacity: {{ tableBlurOpacity.toFixed(1) }}</span>
-                        <input type="range" v-model.number="tableBlurOpacity" min="0" max="1" step="0.1"
-                            class="w-full accent-primary-500" />
                     </div>
                 </div>
             </div>
