@@ -1,7 +1,7 @@
 export const location = ref(null);
 
 export function fetchCoordsLocation(latitude, longitude) {
-    return fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}&result_type=locality|sublocality|postal_code|country|administrative_area_level_1|administrative_area_level_2`)
+    return fetch(`/api/geocode?lat=${latitude}&lng=${longitude}`)
         .then((response) => {
             return response.json()
         })

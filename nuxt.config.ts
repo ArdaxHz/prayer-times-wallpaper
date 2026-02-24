@@ -26,10 +26,8 @@ export default defineNuxtConfig({
       ],
     },
   },
-  vite: {
-    define: {
-      'GOOGLE_API_KEY': JSON.stringify(process.env.GOOGLE_API_KEY)
-    }
+  runtimeConfig: {
+    googleApiKey: process.env.GOOGLE_API_KEY || '',
   },
   modules: [
     'nuxt-swiper',
@@ -42,6 +40,11 @@ export default defineNuxtConfig({
     prerender: {
       autoSubfolderIndex: false
     }
+  },
+  fonts: {
+    providers: {
+      fontshare: false,
+    },
   },
   colorMode: {
     preference: 'dark'
