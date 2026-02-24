@@ -27,7 +27,9 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    googleApiKey: process.env.GOOGLE_API_KEY || '',
+    public: {
+      googleApiKey: process.env.GOOGLE_API_KEY || '',
+    },
   },
   modules: [
     'nuxt-swiper',
