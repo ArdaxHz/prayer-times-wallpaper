@@ -2,7 +2,7 @@
 
 Calculates Islamic prayer (Salah) times for a given location and generates downloadable phone wallpapers with prayer timetables.
 
-**Live version:** [salah.emanchannel.tv](https://salah.emanchannel.tv)
+**Live version:** [prayer-times.ardax.dev](https://prayer-times.ardax.dev)
 
 ## Setup
 
