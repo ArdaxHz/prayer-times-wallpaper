@@ -31,6 +31,10 @@ const tableBlurOpacity = ref(-0.2);
 // Table vertical offset (px)
 const tableOffset = ref(0);
 
+// Table spacing
+const columnSpacing = ref(0.85);
+const rowSpacing = ref(0.25);
+
 // Title drop shadow
 const titleDropShadow = ref(true);
 const titleShadowBlur = ref(12);
@@ -43,9 +47,6 @@ const timingsFont = ref('Gilroy');
 
 // Title font weight
 const titleFontWeight = ref(600);
-
-// Auto text color based on overlay luminosity
-const autoTextColor = ref(true);
 
 // Font size scales (per element)
 const titleFontSize = ref(1.0);
@@ -94,22 +95,13 @@ function resetAlternatingColors() {
     oddRowColor.value = '#0000001A';
 }
 
-// Compute auto text color from overlay luminosity
-const computedTimingsTextColor = computed(() => {
-    if (!autoTextColor.value) return timingsTextColor.value;
-    // If overlay is dark (negative opacity), text should be white; if bright (positive), text should be black
-    if (tableBlurOpacity.value < -0.15) return '#FFFFFF';
-    if (tableBlurOpacity.value > 0.15) return '#000000';
-    return timingsTextColor.value; // Near zero = transparent overlay, use manual color
-});
-
 function buildOptions() {
     return {
         headerBgColor: headerBgColor.value,
         headerTextColor: headerTextColor.value,
         titleTextColor: titleTextColor.value,
         titleBgColor: titleBgColor.value,
-        timingsTextColor: computedTimingsTextColor.value,
+        timingsTextColor: timingsTextColor.value,
         tableBgColor: tableBgColor.value,
         useAlternatingColors: useAlternatingColors.value,
         evenRowColor: evenRowColor.value,
@@ -117,10 +109,11 @@ function buildOptions() {
         tableBlur: tableBlur.value,
         tableBlurOpacity: tableBlurOpacity.value,
         tableOffset: tableOffset.value,
+        columnSpacing: columnSpacing.value,
+        rowSpacing: rowSpacing.value,
         titleDropShadow: titleDropShadow.value,
         titleShadowBlur: titleShadowBlur.value,
         titleShadowOpacity: titleShadowOpacity.value,
-        autoTextColor: autoTextColor.value,
         headerFont: headerFont.value,
         titleFont: titleFont.value,
         timingsFont: timingsFont.value,
@@ -153,8 +146,8 @@ function buildOptions() {
 watch(
     [headerBgColor, headerTextColor, titleTextColor, titleBgColor, timingsTextColor, tableBgColor,
      useAlternatingColors, evenRowColor, oddRowColor,
-     tableBlur, tableBlurOpacity, tableOffset,
-     titleDropShadow, titleShadowBlur, titleShadowOpacity, autoTextColor,
+     tableBlur, tableBlurOpacity, tableOffset, columnSpacing, rowSpacing,
+     titleDropShadow, titleShadowBlur, titleShadowOpacity,
      headerFont, titleFont, timingsFont, titleFontWeight, titleFontSize, headerFontSize, timingsFontSize,
      highlightMondayThursday, mondayThursdayColor, highlightWhiteDays, whiteDaysColor, todayColor,
      colDate, colHijri, colFajr, colSunrise, colDhuhr, colAsr, colMaghrib, colIsha,
@@ -308,8 +301,14 @@ onMounted(() => {
                             class="w-full accent-primary-500" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Auto Text Color:</span>
-                        <USwitch v-model="autoTextColor" />
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Column Spacing: {{ columnSpacing.toFixed(2) }}rem</span>
+                        <input type="range" v-model.number="columnSpacing" min="0" max="2" step="0.05"
+                            class="w-full accent-primary-500" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <span class="text-sm text-gray-900 dark:text-white font-semibold">Row Spacing: {{ rowSpacing.toFixed(2) }}rem</span>
+                        <input type="range" v-model.number="rowSpacing" min="0" max="2" step="0.05"
+                            class="w-full accent-primary-500" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                         <span class="text-sm text-gray-900 dark:text-white font-semibold">Alternating Row Colors:</span>

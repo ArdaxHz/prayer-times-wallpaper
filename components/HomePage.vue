@@ -25,10 +25,11 @@ const wallpaperOptions = ref({
     tableBlur: 20,
     tableBlurOpacity: -0.2,
     tableOffset: 0,
+    columnSpacing: 0.85,
+    rowSpacing: 0.25,
     titleDropShadow: true,
     titleShadowBlur: 12,
     titleShadowOpacity: 1.0,
-    autoTextColor: true,
     headerFont: 'Gilroy',
     titleFont: 'Gilroy',
     timingsFont: 'Gilroy',
@@ -93,21 +94,23 @@ watch(() => prayerTimes.value, (newValue, _) => {
 });
 
 const wallpaperName = computed(() => {
-    let name = 'prayer-timetable-wallpaper';
-    if (location.value && location.value.area && location.value.country) {
-        const area = location.value.area;
-        const country = location.value.country;
-        if (selectedHijriMonth.value) {
-            const hijriLabel = selectedHijriMonth.value.label || '';
-            name = `${area}-${country}_${hijriLabel}`
-                .toLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/[^a-z0-9_-]/g, '');
-        } else {
-            name = `${area}-${country}_${dayjs(gregorianDate.value).format('MM-YY')}_prayer-timetable`.toLowerCase();
-        }
+    const hasLocation = location.value && location.value.area && location.value.country;
+    let monthPart = '';
+
+    if (selectedHijriMonth.value) {
+        monthPart = selectedHijriMonth.value.label || '';
+    } else if (gregorianDate.value) {
+        monthPart = dayjs(gregorianDate.value).format('MMMM-YYYY');
     }
-    return name;
+
+    let name;
+    if (hasLocation) {
+        name = `${location.value.area}-${location.value.country}-${monthPart}-prayer-times-wallpaper`;
+    } else {
+        name = `${monthPart}-prayer-times-wallpaper`;
+    }
+
+    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 });
 
 function updatePrayerTimes(prayer) {

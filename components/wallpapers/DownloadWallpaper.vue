@@ -16,6 +16,38 @@ const props = defineProps({
 
 const isLoading = ref(false);
 
+function embedJpegMetadata(blob) {
+    const comment = [
+        `Source: ${window.location.origin}`,
+        `Generator: Prayer Times Wallpaper Generator`,
+        `URL: ${window.location.href}`,
+        `Date: ${new Date().toISOString()}`,
+    ].join('\n');
+
+    return blob.arrayBuffer().then(function (buffer) {
+        const original = new Uint8Array(buffer);
+        const encoder = new TextEncoder();
+        const commentBytes = encoder.encode(comment);
+        const commentLength = commentBytes.length + 2; // +2 for the length field itself
+
+        // COM segment: FF FE + 2-byte length + comment
+        const comSegment = new Uint8Array(4 + commentBytes.length);
+        comSegment[0] = 0xFF;
+        comSegment[1] = 0xFE;
+        comSegment[2] = (commentLength >> 8) & 0xFF;
+        comSegment[3] = commentLength & 0xFF;
+        comSegment.set(commentBytes, 4);
+
+        // Insert after SOI marker (first 2 bytes: FF D8)
+        const result = new Uint8Array(original.length + comSegment.length);
+        result.set(original.subarray(0, 2), 0);
+        result.set(comSegment, 2);
+        result.set(original.subarray(2), 2 + comSegment.length);
+
+        return new Blob([result], { type: 'image/jpeg' });
+    });
+}
+
 function triggerDownload(url, isObjectURL) {
     const link = document.createElement('a');
     link.download = `${props.wallpaperName}.jpg`;
@@ -85,8 +117,10 @@ function downloadImage() {
                         });
                         return;
                     }
-                    const url = URL.createObjectURL(blob);
-                    triggerDownload(url, true);
+                    embedJpegMetadata(blob).then(function (tagged) {
+                        const url = URL.createObjectURL(tagged);
+                        triggerDownload(url, true);
+                    });
                 }, 'image/jpeg', 0.95);
             })
             .catch(function (error) {
@@ -106,8 +140,15 @@ function downloadImage() {
     } else {
         // Non-Safari path: use dom-to-image
         domtoimage.toJpeg(el, config)
-            .then(function (url) {
-                triggerDownload(url, false);
+            .then(function (dataUrl) {
+                return fetch(dataUrl).then(r => r.blob());
+            })
+            .then(function (blob) {
+                return embedJpegMetadata(blob);
+            })
+            .then(function (tagged) {
+                const url = URL.createObjectURL(tagged);
+                triggerDownload(url, true);
             })
             .catch(function (error) {
                 console.error('dom-to-image error:', error);

@@ -148,7 +148,6 @@ function scaleText(width) {
     position: relative;
     width: max-content;
     height: min-content;
-    overflow: hidden;
 }
 
 .wallpaper-container {

@@ -27,17 +27,23 @@ const todayColor = computed(() => opts.value.todayColor || '#FF0000');
 const headerFontSize = computed(() => `${2.2 * headerFontScale.value}rem`);
 const tdFontSize = computed(() => `${1.7 * timingsFontScale.value}rem`);
 
+const columnSpacing = computed(() => opts.value.columnSpacing ?? 0.85);
+const rowSpacing = computed(() => opts.value.rowSpacing ?? 0.25);
+
 const headerStyle = computed(() => ({
     fontFamily: headerFont.value,
     backgroundColor: headerBgColor.value,
     color: headerTextColor.value,
     fontSize: headerFontSize.value,
+    paddingInline: `${columnSpacing.value}rem`,
 }));
 
 const tdStyle = computed(() => ({
     fontFamily: timingsFont.value,
     color: timingsTextColor.value,
     fontSize: tdFontSize.value,
+    paddingInline: `${columnSpacing.value}rem`,
+    paddingBlock: `${rowSpacing.value}rem`,
 }));
 
 // Column definitions
